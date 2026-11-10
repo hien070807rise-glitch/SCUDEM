@@ -1,0 +1,692 @@
+% !TEX program = xelatex
+\documentclass[11pt,a4paper]{report}
+
+% ==============================================================================
+% 0. THÔNG TIN ĐỀ TÀI & CẤU HÌNH HỌC THUẬT (SCUDEM XI 2026 - PROBLEM B)
+% ==============================================================================
+\newcommand{\mytitle}{ĐỘNG LỰC HỌC NHÓM TRONG HÀNH VI KIẾM ĂN}
+\newcommand{\mysubtitle}{Mô hình hóa Phương trình Vi phân Ngẫu nhiên Langevin Ba Giai đoạn:\\Khoảng cách Không gian, Chất lượng Thông tin, Lừa dối Chiến lược và Phân tích Độ nhạy Toàn cục}
+\newcommand{\myauthor}{Lê Kế Hiển, Phạm Thanh Thư, Đặng Huyền Trâm}
+\newcommand{\myinstitution}{STUDENT CHALLENGE USING DIFFERENTIAL EQUATIONS MODELING (SIMIODE / COMAP)}
+\newcommand{\mydate}{Tháng 11 Năm 2026}
+
+% ==============================================================================
+% 1. NGÔN NGỮ VÀ FONT (XeLaTeX - Preset A: Pagella + DejaVu)
+% ==============================================================================
+\usepackage{fontspec}
+\usepackage{polyglossia}
+\setmainlanguage{vietnamese}
+\IfFontExistsTF{TeX Gyre Pagella}
+  {\setmainfont{TeX Gyre Pagella}[Ligatures=TeX]}
+  {\setmainfont{DejaVu Serif}[Ligatures=TeX]}
+\IfFontExistsTF{DejaVu Sans Mono}{\setmonofont{DejaVu Sans Mono}[Scale=0.82]}{}
+
+% ==============================================================================
+% 2. TOÁN HỌC, ĐỊNH LÝ VÀ ĐỒ HỌA
+% ==============================================================================
+\usepackage{amsmath,amssymb,amsfonts,mathtools}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{placeins}
+\usepackage{flafter}
+\usepackage{etoolbox}
+\graphicspath{{../fig/}{fig/}{./}}
+
+% Cấu hình thông số float: Đảm bảo trang float page bám sát ĐỈNH TRANG, không căn giữa
+\makeatletter
+\setlength{\@fptop}{0pt}
+\setlength{\@fpsep}{12pt plus 1fil}
+\setlength{\@fpbot}{0pt plus 1fil}
+\makeatother
+
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.05}
+\renewcommand{\floatpagefraction}{0.80}
+
+% Lệnh chèn hình an toàn tự động bám sát văn bản hoặc đỉnh trang sau (!htbp)
+\newcommand{\chenhinh}[4][0.88\textwidth]{
+  \begin{figure}[!htbp]
+    \centering
+    \IfFileExists{fig_en/#2}{\includegraphics[width=#1]{fig_en/#2}}{%
+      \IfFileExists{fig/en/#2}{\includegraphics[width=#1]{fig/en/#2}}{%
+        \IfFileExists{#2}{\includegraphics[width=#1]{#2}}{%
+          \IfFileExists{fig/#2}{\includegraphics[width=#1]{fig/#2}}{%
+            \includegraphics[width=#1]{#2}%
+          }%
+        }%
+      }%
+    }
+    \caption{#3}\label{#4}
+  \end{figure}
+}
+
+% ==============================================================================
+% 3. KHỔ TRANG & TYPOGRAPHY CHUẨN
+% ==============================================================================
+\usepackage[a4paper,left=3.0cm,right=3.0cm,top=2.8cm,bottom=3.0cm,
+            headheight=24pt,headsep=0.8cm,footskip=1.2cm]{geometry}
+\usepackage{microtype}
+\frenchspacing
+\linespread{1.14}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.55em plus 0.18em minus 0.05em}
+\widowpenalty=10000 \clubpenalty=10000 \displaywidowpenalty=10000
+\tolerance=1000 \emergencystretch=3em
+\raggedbottom
+
+\usepackage{enumitem}
+\setlist{leftmargin=1.7em,labelsep=0.6em,itemsep=0.22em,topsep=0.35em,parsep=0pt,partopsep=0pt}
+\setlist[itemize,1]{label=\textendash}
+
+\usepackage{lettrine}
+\renewcommand{\LettrineTextFont}{\normalfont}
+\setcounter{DefaultLines}{2}
+
+% ==============================================================================
+% 4. BẢNG MÀU HỌC THUẬT & ĐỊNH DẠNG TIÊU ĐỀ
+% ==============================================================================
+\usepackage{xcolor}
+\definecolor{accent}{HTML}{1B365D}      % Xanh Navy chủ đạo SCUDEM
+\definecolor{subaccent}{HTML}{1E40AF}   % Xanh hoàng gia
+\definecolor{highlight}{HTML}{B91C1C}   % Đỏ bordeaux cảnh báo / tương tác âm
+\definecolor{emerald}{HTML}{047857}     % Xanh lục cân bằng Pareto
+
+\usepackage{titlesec}
+\usepackage{titletoc}
+\titleformat{\chapter}[display]
+  {\raggedright\normalfont}
+  {\small\bfseries\color{accent}\addfontfeature{LetterSpace=10}\MakeUppercase{\chaptertitlename}\ \thechapter}
+  {0.6em}
+  {\LARGE\bfseries\raggedright\color{accent}}
+  [\vspace{0.6em}{\color{accent}\titlerule[0.8pt]}]
+\titlespacing*{\chapter}{0pt}{-1.0em}{1.8em}
+
+\titleformat{\section}[hang]{\normalfont\large\bfseries\raggedright\color{accent}}{\thesection}{0.7em}{}
+\titlespacing*{\section}{0pt}{1.6em plus 0.3em}{0.7em}
+
+\titleformat{\subsection}[hang]{\normalfont\normalsize\bfseries\raggedright\color{subaccent}}{\thesubsection}{0.7em}{}
+\titlespacing*{\subsection}{0pt}{1.3em plus 0.2em}{0.5em}
+
+\titlecontents{chapter}[0pt]{\addvspace{0.42em}\bfseries}{\contentslabel{2.2em}}{\hspace*{-2.2em}}{\hfill\contentspage}
+\titlecontents{section}[2.2em]{}{\contentslabel{2.5em}}{\hspace*{-2.5em}}{\titlerule*[0.4pc]{.}\contentspage}
+\titlecontents{subsection}[4.7em]{\small}{\contentslabel{3.3em}}{\hspace*{-3.3em}}{\titlerule*[0.4pc]{.}\contentspage}
+\contentsmargin{2em}
+
+% ==============================================================================
+% 5. ĐẦU TRANG & CHÂN TRANG (FANCYHDR)
+% ==============================================================================
+\usepackage{fancyhdr}
+\makeatletter
+\renewcommand{\chaptermark}[1]{\markboth{\MakeUppercase{\@chapapp}\ \thechapter.\ #1}{}}
+\makeatother
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\footnotesize\color{black!60}\textit{SCUDEM XI 2026}}
+\fancyhead[R]{\footnotesize\color{black!60}\addfontfeature{LetterSpace=4}\leftmark}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\renewcommand{\headrule}{\hbox to\headwidth{\color{black!30}\leaders\hrule height \headrulewidth\hfill}}
+\fancypagestyle{plain}{\fancyhf{}\fancyfoot[C]{\small\thepage}\renewcommand{\headrulewidth}{0pt}}
+
+% ==============================================================================
+% 6. HỘP GHI CHÚ, ĐỐI CHỨNG VÀ BẢNG BIỂU CHUYÊN NGHIỆP
+% ==============================================================================
+\usepackage[most]{tcolorbox}
+
+\newtcolorbox{ketqua}[1]{
+  breakable, enhanced, frame hidden, boxrule=0pt, sharp corners,
+  colback=accent!5, borderline west={2.5pt}{0pt}{accent},
+  left=10pt, right=9pt, top=6pt, bottom=6pt, before skip=9pt, after skip=9pt,
+  fontupper=\small\linespread{1.08}\selectfont,
+  before upper={\noindent{\small\bfseries\color{accent}#1}\par\smallskip}
+}
+
+\newtcolorbox{phanbien}[1][Phản biện \& Thảo luận Giới hạn]{
+  breakable, enhanced, frame hidden, boxrule=0pt, sharp corners,
+  colback=highlight!5, borderline west={2.5pt}{0pt}{highlight},
+  left=10pt, right=9pt, top=6pt, bottom=6pt, before skip=9pt, after skip=9pt,
+  fontupper=\small\linespread{1.08}\selectfont,
+  before upper={\noindent{\small\bfseries\color{highlight}#1}\par\smallskip}
+}
+
+\newtcolorbox{thucte}[1][Đối chiếu Dữ liệu Thực địa]{
+  breakable, enhanced, frame hidden, boxrule=0pt, sharp corners,
+  colback=emerald!5, borderline west={2.5pt}{0pt}{emerald},
+  left=10pt, right=9pt, top=6pt, bottom=6pt, before skip=9pt, after skip=9pt,
+  fontupper=\small\linespread{1.08}\selectfont,
+  before upper={\noindent{\small\bfseries\color{emerald}#1}\par\smallskip}
+}
+
+\usepackage{booktabs,longtable,tabularx,array}
+\newcolumntype{Y}{>{\centering\arraybackslash}X}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.22}
+
+% Hyperref luôn nạp sau cùng
+\usepackage[unicode,colorlinks=true,linkcolor=accent,citecolor=accent,urlcolor=subaccent,
+            bookmarksnumbered=true,pdfpagelabels,pdftitle={\mytitle},pdfauthor={\myauthor}]{hyperref}
+
+% Ký hiệu toán học viết tắt
+\newcommand{\dd}{\mathrm{d}}
+\newcommand{\seff}{s_{\mathrm{eff}}}
+\newcommand{\Gcap}{G^{\mathrm{cap}}}
+\newcommand{\Gref}{G_{\mathrm{ref}}}
+\newcommand{\Pe}{\mathrm{Pe}}
+
+% ==============================================================================
+% NỘI DUNG TÀI LIỆU
+% ==============================================================================
+\begin{document}
+
+% ------------------------------------------------------------------------------
+% TRANG BÌA CHUẨN QUỐC TẾ
+% ------------------------------------------------------------------------------
+\begin{titlepage}
+\thispagestyle{empty}
+\begin{center}
+  \vspace*{0.8cm}
+  {\small\bfseries\color{accent}\addfontfeature{LetterSpace=10}CUỘC THI TOÁN MÔ HÌNH HÓA QUỐC TẾ SCUDEM XI 2026\par}
+  \vspace{0.3cm}
+  {\footnotesize\color{black!60}\addfontfeature{LetterSpace=5}STUDENT CHALLENGE USING DIFFERENTIAL EQUATIONS MODELING\par}
+  \vspace{1.2cm}
+  \rule{0.88\textwidth}{1.2pt}\par
+  \vspace{0.7cm}
+  {\huge\bfseries\color{accent} \mytitle\par}
+  \vspace{0.5cm}
+  {\large\color{subaccent}\textbf{\mysubtitle}\par}
+  \vspace{0.7cm}
+  \rule{0.88\textwidth}{1.2pt}\par
+  \vspace{1.0cm}
+
+  \begin{tabularx}{0.92\textwidth}{@{}rX@{}}
+    \textbf{Đề tài:} & \textbf{Problem B: Group Dynamics in Foraging} \\
+    \textbf{Đối tượng mô phỏng:} & Khỉ nhện Geoffroyi tại Punta Laguna \\
+    \textbf{Thí sinh:} & Lê Kế Hiển, Phạm Thanh Thư, Đặng Huyền Trâm \\
+  \end{tabularx}
+
+  \vfill
+\end{center}
+\end{titlepage}
+
+% ------------------------------------------------------------------------------
+% TÓM TẮT ĐIỀU HÀNH (EXECUTIVE SUMMARY)
+% ------------------------------------------------------------------------------
+\pagenumbering{roman}
+\chapter*{Tổng quan \& Lời giải cho bài toán}
+\addcontentsline{toc}{chapter}{Tổng quan \& Lời giải cho bài toán}
+
+Bài toán B của đề thi SCUDEM XI 2026 xuất phát từ nghiên cứu thực địa của Ramos-Fernandez và cộng sự trên loài khỉ nhện Geoffroyi: khảo sát cơ chế chia sẻ thông tin bổ sung và phối hợp nhóm trong tìm kiếm tài nguyên phân tán. Đề tài đặt vấn đề liệu các cá thể có xu hướng \textit{“giữ khoảng cách xa nhất có thể mà vẫn duy trì liên lạc được với nhau”} hay không; đồng thời yêu cầu phát triển mô hình phương trình vi phân cho hai cá thể kiếm ăn nhằm lượng hóa 4 khía cạnh: (1) khoảng cách không gian, (2) mức độ và độ chi tiết thông điệp, (3) độ chính xác kênh truyền, và (4) hành vi cố ý lừa dối. Mục tiêu cuối cùng là giải đáp hai câu hỏi trọng tâm: \textbf{Yếu tố nào quan trọng hơn?} và \textbf{Mối quan hệ tương tác, đánh đổi giữa các yếu tố diễn ra như thế nào?}
+
+Nhằm giải quyết triệt để bài toán và triệt tiêu sai số ngẫu nhiên từ kích thước mẫu nhỏ, nhóm thí sinh nghiên cứu thiết lập hệ phương trình vi phân ngẫu nhiên Langevin quá cản (\textit{Overdamped Langevin SDE}) lồng nhau qua ba giai đoạn; toàn bộ các kết luận được nghiệm thu trên tập dữ liệu từ mô phỏng gồm $R = 5.000$ bản sao Monte Carlo sử dụng biến ngẫu nhiên chung (\textit{Common Random Numbers} -- CRN, bước tích phân $\dd t = 0{,}25\text{ phút}$). Kết quả thu được từ mô phỏng cho ta câu trả lời cho bài toán trên:
+
+\begin{ketqua}{Bốn câu trả lời cho bài toán}
+\begin{enumerate}[leftmargin=1.5em,itemsep=3pt]
+  \item \textbf{Yếu tố nào quan trọng hơn? Khoảng cách $d_0$ áp đảo sai số kênh truyền $\sigma_c$ gấp $4{,}83$ lần:}
+  \begin{itemize}
+    \item \textbf{Hiệu quả tổng thể của cặp ($M = \bar{E}$):} Các tham số sinh thái học và năng lực nội tại (độ rộng tán cây $s$, mật độ vùng ăn $K$, tốc độ bám mùi $B_g$, hệ số giữ vùng ăn MVT $\kappa$) chi phối toàn diện hệ thống: độ biến động đạt $\Delta M \in [0{,}07; 0{,}24]\,e$, áp đảo toàn bộ các biến số giao tiếp ($\le 0{,}05\,e$).
+    \item \textbf{Giá trị thuần của liên lạc ($V = M - M^{b=0}$):} Trên dải sinh học thực tế ($d_0 \in [20; 140]\text{ m}$, $\sigma_c \in [0; 100]\text{ m}$), \textbf{khoảng cách ưa thích $d_0$ đứng vị trí thứ nhất}: biên độ biến thiên đạt $\Delta V_{d_0} = \mathbf{0{,}0467\,e}$, lớn gấp \textbf{$4{,}83\times$} so với độ lệch chuẩn nhiễu kênh truyền $\Delta V_{\sigma_c} = \mathbf{0{,}0097\,e}$, và gấp $\sim 10\times$ so với bậc chi tiết thông điệp $b$.
+  \end{itemize}
+
+  \item \textbf{Mối quan hệ giữa Khoảng cách và Chất lượng thông tin: Hai quy luật tương tác trái dấu:}
+  \begin{itemize}
+    \item \textbf{Tương tác dương bão hòa cổ chai ($I(d_0, t) = \mathbf{+0{,}0148 \pm 0{,}0009\,e}$, $z = +15{,}7\text{ SE}$):} Khoảng cách không gian điều khiển độ chính xác kênh truyền theo cơ chế ngưỡng phi tuyến. Khi $d_0 \ge 100\text{ m} \approx 2R_c$, cường độ âm thanh suy giảm tự nhiên $\rho(d) \to 0$: khoảng cách vật lý trở thành lá chắn triệt tiêu cả tác hại của nhiễu tọa độ lẫn lừa dối chiến lược.
+    \item \textbf{Tương tác âm cộng hưởng phá hủy ($I(\gamma, t) = \mathbf{-0{,}0210 \pm 0{,}0007\,e}$, $z = -28{,}1\text{ SE}$):} Cổng cảm nhận tại chỗ $(1-q_i)^\gamma$ là chốt chặn phòng vệ tối hậu; khi mất cổng ($\gamma = 0$), tổn thất do lừa dối bùng nổ vượt xa tổng tác hại cộng tính độc lập.
+  \end{itemize}
+
+  \item \textbf{Tác động của Thông tin sai và Lừa dối chiến lược:}
+  \begin{itemize}
+    \item \textbf{Nhiễu ngẫu nhiên ($\sigma_c$):} Hệ thống có sức chịu lỗi bền vững nhờ cổng cảm nhận; giá trị liên lạc chỉ sụt giảm một nửa tại mức nhiễu $\sigma_{1/2} = \mathbf{49{,}2\text{ m}}$ ($[43; 59]\text{ m}$) và \textbf{luôn duy trì giá trị dương} khi $\gamma = 1$. Ngược lại, nếu tắt cổng ($\gamma = 0$), nhiễu kéo cá thể rời khỏi vùng thức ăn và tạo ra mức lỗ ròng $-0{,}0056 \pm 0{,}0007\,e$.
+    \item \textbf{Lừa dối có hướng ($t, \Delta$):} Khi kẻ dối trá phát tín hiệu kéo bạn về phía mình (\texttt{toward}), mức độ độc hại cao gấp \textbf{$3{,}01\times$} so với nhiễu ngẫu nhiên cùng cường độ (đây là cận trên; hướng ngẫu nhiên gấp $1{,}50\times$, hướng đẩy ra xa bằng $0\times$). Động cơ nói dối chỉ xuất hiện khi tỷ lệ kho thức ăn dùng chung vượt ngưỡng $s^* \approx 0{,}67$. Tỉ số Hại/Lợi đạt $5{,}30 : 1$ ở cạnh tranh khai thác cơ sở, thu hẹp về $1{,}25 : 1$ khi có cản trở trực tiếp ($\lambda=1$). Đối với người nhận, chính sách niềm tin tối ưu tuân theo dạng bước nhảy (\textit{bang-bang}) tại ngưỡng trung thực $t_0 \approx 0{,}38$.
+  \end{itemize}
+
+  \item \textbf{Giải mã Nghịch lý Khoảng cách: Đường cong chữ U trong Lượng ăn 1D và Cân bằng Pareto $w^* = 1/3$ ngoài Thực địa:}
+  \begin{itemize}
+    \item Khi khảo sát lượng thức ăn ròng trong ngày ($E(d_0)$), hàm mục tiêu có dạng \textbf{đường cong chữ U với đáy trũng tại $d_0 \in [60; 100]\text{ m}$}: tín hiệu âm thanh đã suy yếu nhưng cạnh tranh cạn kiệt cục bộ vẫn tồn tại; cực đại chỉ xuất hiện ở hai biên ($d^* \approx 0$ khi liên lạc chiếm ưu thế hoặc $d^* = 200\text{ m}$ khi cạnh tranh gay gắt).
+    \item Tuy nhiên, khi đối chiếu với chỉ số chồng lấn vùng cư trú 60\% của Ramos-Fernandez et al. (2026), mô hình tiệm cận ngưỡng tối ưu lý thuyết \textbf{$w^* = 1/3$ tại $d_0 \approx 40\text{--}60\text{ m} \approx R_c$}: đây là điểm cân bằng Pareto sinh thái, bảo toàn $\sim 65\%$ lợi ích thông tin trong khi giảm được $50\%$ mức độ chồng lấn không gian, giúp bầy đàn né tránh đáy chữ U cạn kiệt.
+  \end{itemize}
+\end{enumerate}
+\end{ketqua}
+
+\clearpage
+\tableofcontents
+\clearpage
+\pagenumbering{arabic}
+
+% ==============================================================================
+% CHƯƠNG 1: BỐI CẢNH, GIẢ ĐỊNH & THIẾT KẾ ĐỐI CHỨNG LỒNG NHAU
+% ==============================================================================
+\FloatBarrier
+\chapter{Bối cảnh, Giả định \& Mô hình Langevin}
+
+\section{Bối cảnh và vấn đề đặt ra}
+\lettrine{K}{hỉ nhện} Geoffroyi tại Khu bảo tồn Punta Laguna là loài linh trưởng chuyên ăn quả chín phân tán trong rừng nhiệt đới. Do các cây ăn quả có trữ lượng biến động mạnh và rải rác trên diện rộng, khỉ nhện duy trì tổ chức xã hội theo mô hình \textit{phân rã -- hợp nhất} (\textit{fission--fusion}): đàn lớn thường xuyên tách thành các nhóm nhỏ (1--3 cá thể) đi tìm kiếm thức ăn độc lập, sau đó phát ra các tiếng hú định vị (\textit{whinny calls}) có bán kính nghe rõ hiệu dụng $R_c \approx 50\text{ m}$ để chia sẻ thông tin về những cây quả chín trù phú \cite{ramos, martinez}.
+
+Khi mô hình hóa hành vi này bằng hệ phương trình vi phân, chúng ta đối diện trực tiếp với vấn đề:
+\begin{enumerate}
+  \item \textbf{Cạnh tranh cạn kiệt tài nguyên cục bộ (Áp lực đẩy xa):} Nếu hai cá thể duy trì cự ly quá gần ($d_0 \to 0$), chúng sẽ liên tục rơi vào cùng một cây ăn quả. Điều này sẽ làm cạn kiệt nhanh chóng kho thức ăn, khiến hiệu quả kiếm ăn mỗi con sẽ suy giảm rõ rệt.
+  \item \textbf{Suy giảm tín hiệu âm thanh theo không gian (Áp lực kéo gần):} Nếu hai cá thể giãn cách nhau quá xa vượt quá tầm âm thanh ($d_0 \gg R_c = 50\text{ m}$), khả năng truyền tin suy giảm về $0$, mạng lưới chia sẻ thông tin bị đứt gãy, và mỗi cá thể phải tự dò dẫm trong môi trường không có thông tin.
+\end{enumerate}
+
+\section{Các giả định trong mô hình (A1 -- A11)}
+Để đảm bảo tính khả quy giải tích và kiểm thử số học chính xác, mô hình thiết lập hệ thống 11 giả định: (Bảng \ref{tab:assumptions}).
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Hệ thống 11 giả định thiết kế và cơ sở cơ học.}\label{tab:assumptions}
+\begin{tabularx}{\textwidth}{@{}llXl@{}}
+\toprule
+\textbf{Mã} & \textbf{Giả định} & \textbf{Lý do} & \textbf{Kiểm chứng} \\
+\midrule
+A1 & Hai cá thể đồng nhất năng lực & Cô lập tác động của giao tiếp khỏi sai dị thể chất & Đối xứng hoán vị \\
+A2 & Không gian vòng 1D ($L=600\text{ m}$) & Triệt tiêu nhiễu biên; tính được nghiệm dừng Boltzmann & Khớp giải tích $<0{,}3\%$ \\
+A3 & $K=6$ vùng ăn chuông Gauss ($s=10\text{ m}$) & Tránh điểm gãy đạo hàm; tạo lực trôi trơn nhẵn & Quét $s \in [5; 20]\text{ m}$ \\
+A4 & Cạn kiệt Michaelis--Menten & Giới hạn tốc độ ăn tối đa $e$; mô tả cạn kiệt tự nhiên & Quét $G_h, G_m$ \\
+A5 & Tái tạo sinh khối chậm ($r=10^{-3}$) & Phản ánh chu kỳ quả chín chậm so với 1 ngày ăn & $T = 600\text{ phút}$ \\
+A6 & Langevin quá cản (\textit{Overdamped}) & Vận tốc tỷ lệ thuận với lực sinh thái; dễ bóc tách & Thử quán tính $\gamma_v$ \\
+A7 & Tầm nhận cảm mùi $\sigma = 15\text{ m}$ & Cho độ rộng hiệu dụng đóng $\seff = \sqrt{s^2+\sigma^2} \approx 18\text{ m}$ & Quét $\sigma \in [5; 40]\text{ m}$ \\
+A8 & Lò xo xã hội giữ khoảng cách $d_0$ & Mô tả xu hướng duy trì cự ly bầy đàn & Kiểm thử OU $D/B_s$ \\
+A9 & Suy giảm âm thanh Gauss $\rho(d)$ & Tránh cực trị giả tạo tại mép cắt cứng & Thử mũ và lũy thừa \\
+A10 & Chi phí phát tin tỷ lệ $c_0 b$ & Tránh việc thông tin miễn phí dẫn tới $b$ cực đại vô lý & Quét $c_0 \in [0; 0{,}016]$ \\
+A11 & Lừa dối cần động cơ chia sẻ kho & Lừa dối là sản phẩm của cạnh tranh độc chiếm vùng ăn & Quét kho chung $s \in [0; 1]$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Phương trình Vi phân Ngẫu nhiên Langevin}
+Hệ thống được thiết kế theo cấu trúc đối chứng lồng nhau qua 3 giai đoạn:
+\begin{itemize}
+  \item \textbf{Giai đoạn 1 (Cá thể đơn độc):} Xác lập mốc đối chứng chuẩn $E_1$. Phương trình vi phân ngẫu nhiên mô tả chuyển động bám gradient mùi thức ăn kết hợp khuếch tán Brown:
+  \begin{equation}
+    \dd x = B_g\,\partial_x g_\sigma(x, t)\,\dd t + m_\kappa(t)\sqrt{2D}\,\dd W_t
+  \end{equation}
+  trong đó $B_g = 100\text{ m}^2/\text{phút}$, $D = 50\text{ m}^2/\text{phút}$ (số Péclet $\Pe = B_g/D = 2$). Thừa số $m_\kappa(t) \in \{\kappa, 1\}$ thể hiện cơ chế giữ vùng ăn theo Định lý Giá trị Biên Charnov (MVT \cite{charnov}): khi tốc độ ăn tức thời vượt trung bình ngày, cá thể giảm khuếch tán ($m_\kappa = \kappa \le 1$) để nán lại khai thác. Nghiệm dừng lý thuyết khi thức ăn tĩnh là phân phối Boltzmann--Gibbs $\rho_\infty(x) \propto \exp\big((B_g/D)g_\sigma(x)\big)$, khớp với mô phỏng trong phạm vi $0{,}3\%$.
+
+  \item \textbf{Giai đoạn 2 (Hai cá thể, giao tiếp hoàn hảo):} Đưa cá thể thứ hai vào chung môi trường để bóc tách chi phí cạnh tranh kho chung và đo lường mức trần liên lạc khi thông tin hoàn toàn chính xác, trung thực và miễn phí ($\sigma_c = 0, t = 1, C_i = 0$):
+  \begin{equation}
+  \begin{split}
+    \dd x_i = \Big[ &B_g\,\partial_x g_\sigma(x_i) + B_c\,\rho(d)\,q_j\,(1 - q_i)\tanh\!\left(\frac{\delta(\hat{c}_j - x_i)}{\delta_0}\right) \\
+    &+ B_s(d_0 - d)\operatorname{sgn}\big(\delta(x_i - x_j)\big) \Big]\dd t + m_{\kappa,i}\sqrt{2D}\,\dd W_i
+  \end{split}
+  \end{equation}
+
+  \item \textbf{Giai đoạn 3 (Hai cá thể, giao tiếp chịu tác động thực tế):} Tích hợp đồng thời 4 yếu tố gây suy thoái kênh truyền: nhiễu tọa độ Ornstein--Uhlenbeck $\eta_j(t)$, bậc chi tiết $b \in \{1..4\}$, lừa dối có định hướng $(t_j, \Delta)$, niềm tin $p_i(t)$ và số mũ cổng tự kiểm chứng $\gamma$.
+\end{itemize}
+
+Hệ phương trình vi phân ngẫu nhiên tổng quát chi phối chuyển động của mỗi cá thể $i \in \{A, B\}$ ($j \neq i$) tại Giai đoạn 3 có dạng:
+\begin{equation}
+\label{eq:governing_sde}
+\begin{split}
+  \dd x_i = \Big[ &\underbrace{B_g\,\partial_x g_\sigma(x_i)}_{\substack{\text{Lực leo dốc}\\v_{\text{grad}}}} + \underbrace{p_i\,B_c\,\exp\!\left(-\frac{d^2}{2R_c^2}\right) q_j\,(1 - q_i)^\gamma\,\psi_b(\tilde{a}_{ij})}_{\substack{\text{Lực kéo liên lạc âm thanh qua cổng cảm nhận}\\(\text{Nhiễu }\eta_j\text{, Chi tiết }b\text{, Lừa dối }\Delta)}} \\
+  &+ \underbrace{B_s(d_0 - d)\operatorname{sgn}\big(\delta(x_i - x_j)\big)}_{\substack{\text{Lực lò xo xã hội}\\v_{\text{social}}}} \Big]\dd t + \underbrace{m_{\kappa,i}\sqrt{2D}\,\dd W_i}_{\substack{\text{Khuếch tán}\\v_{\text{diff}}}}
+\end{split}
+\end{equation}
+
+\chenhinh[0.76\textwidth]{fig1_trajectories.png}{Quỹ đạo không gian -- thời gian của cá thể A và B trên vòng tròn $L=600\text{ m}$ trong $T=600\text{ phút}$.}{fig:langevin_trajectories}
+
+\chenhinh[0.76\textwidth]{fig1_distance.png}{Khoảng cách tương đối $d(t)$ giữa hai cá thể dao động ngẫu nhiên xung quanh cự ly lò xo xã hội $d_0 = 50\text{ m}$.}{fig:langevin_distance}
+
+Hình \ref{fig:langevin_trajectories} và Hình \ref{fig:langevin_distance} minh họa trực quan tiến trình mô phỏng thực tế của phương trình vi phân ngẫu nhiên: cá thể không chuyển động đơn điệu mà liên tục trải qua các pha chuyển tiếp giữa tìm kiếm khuếch tán, bị hút về cây ăn quả theo gradient mùi, kéo bạn lại gần khi phát hiện thức ăn, và bị lực lò xo xã hội giữ khoảng cách nhằm tránh giẫm chân lên nhau.
+
+\section{Phân rã Tỉ số \texorpdfstring{$\Phi$}{Phi} và phân tách hai thước đo \texorpdfstring{$M$}{M} và \texorpdfstring{$V$}{V}}
+Trong một ngày hoạt động $T = 600\text{ phút}$, hiệu quả kiếm ăn ròng $E_i$ của mỗi cá thể và hiệu quả trung bình cặp $E$ được định nghĩa:
+\begin{equation}
+E_i = \frac{F_i - C_i}{T}, \qquad E = \frac{1}{2}(E_A + E_B), \qquad \varepsilon = \frac{E}{e} \in [0, 1]
+\end{equation}
+với $F_i$ là tổng thức ăn thu hoạch và $C_i$ là chi phí năng lượng phát tin.
+
+\chenhinh[0.68\textwidth]{fig2_heat.png}{Bề mặt tỉ số $\Phi = E/E_1$ trên mặt phẳng $(d_0, R_c)$. Toàn bộ mặt phẳng thụ động đều có $\Phi < 1$ do tổn thất chia sẻ tài nguyên kho chung $\Phi_0 = 0{,}9126$, khẳng định tính bắt buộc của việc tách biệt hai thước đo $M$ và $V$.}{fig:phi_plane}
+
+\begin{ketqua}{Tách bạch $\Phi$, $M$ và $V$}
+Khi hai cá thể dùng chung môi trường mà hoàn toàn không liên lạc ($B_c = 0$), chúng vẫn làm cạn kiệt thức ăn của nhau, khiến hiệu quả giảm từ $E_1 = 0{,}2954\,e$ xuống $E_0 = 0{,}2696\,e$ (mất \textbf{$8{,}7\%$}). Do đó, tỉ số tổng hợp $\Phi = E/E_1$ bắt buộc phải được phân rã thành hai thừa số độc lập:
+\begin{equation}
+\Phi = \frac{E}{E_1} = \underbrace{\frac{E}{E_0}}_{\substack{\text{Giá trị thực của}\\\text{liên lạc và khoảng cách}}} \times \underbrace{\frac{E_0}{E_1}}_{\substack{\text{Tổn thất cạn kiệt}\\\text{kho dùng chung } (\Phi_0 = 0{,}9126)}}
+\end{equation}
+Vì $\Phi < 1$ trên toàn bộ mặt phẳng thụ động (Hình \ref{fig:phi_plane}), nếu không phân rã sẽ kết luận nhầm rằng giao tiếp gây hại. Vì vậy, bắt buộc phải tách hai thước đo:
+\begin{itemize}
+  \item \textbf{Hiệu quả tổng thể của cặp:} $M = \bar{E}$ (dùng để đánh giá năng suất sinh tồn tổng).
+  \item \textbf{Giá trị thuần của liên lạc:} $V = M - M^{b=0}$ (sau khi đã khấu trừ tổn thất chia sẻ kho chung).
+\end{itemize}
+\end{ketqua}
+
+% ==============================================================================
+% CHƯƠNG 2: ĐỘNG LỰC HỌC KHÔNG GIAN & ĐƯỜNG CONG CHỮ U
+% ==============================================================================
+\FloatBarrier
+\chapter{Động lực học Không gian \& Đáy trũng Cạn kiệt Trung gian}
+
+\section{Phân rã Cơ học: \texorpdfstring{$E(d_0) = E_{\text{lò xo}}(d_0) + \Delta_c(d_0)$}{E(d0) = E\_loxo(d0) + Delta\_c(d0)}}
+\chenhinh[0.72\textwidth]{fig2_curves.png}{Đường cong hiệu quả kiếm ăn ròng $E(d_0)$ dưới các bán kính liên lạc $R_c$, thể hiện rõ độ trũng sâu tại cự ly trung gian $d_0 \in [60; 100]\text{ m}$.}{fig:u_curve}
+
+\chenhinh[0.72\textwidth]{fig2_decomp.png}{Phân rã cộng tính của đường cong $E(d_0)$ thành đường nền lò xo phi đơn điệu $E_{\text{lò xo}}(d_0)$ và lợi ích liên lạc âm thanh giảm đơn điệu $\Delta_c(d_0)$.}{fig:u_decomp}
+
+Hình \ref{fig:u_curve} cho thấy: đường cong hiệu quả $E(d_0)$ mang hình thái chữ U với đáy trũng sâu tại cự ly trung gian $d_0 \in [60; 100]\text{ m}$.
+
+Bản chất cơ học của hiện tượng này được bóc tách hoàn toàn thông qua phép phân rã cộng tính chính xác trên $5.000$ bản sao CRN (Bảng \ref{tab:decomp}):
+\begin{equation}
+E(d_0) = \underbrace{E_{\text{lò xo}}(d_0)}_{\substack{\text{Đường nền khi tắt truyền tin } (B_c=0):\\\text{Phi đơn điệu, chạm đáy tại } 40\text{ m}}} + \underbrace{\Delta_c(d_0)}_{\substack{\text{Lợi ích truyền tin thuần:}\\\text{Giảm đơn điệu từ } +0{,}0318\,e \text{ về } 0}}
+\end{equation}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{3.5pt}
+\caption{Bảng phân rã hiệu quả theo khoảng cách ưa thích $d_0$ tại $R_c = 50\text{ m}, B_c = 4, B_s = 0{,}2$ ($R=5.000$ bản sao siêu mô phỏng).}\label{tab:decomp}
+\begin{tabularx}{\textwidth}{@{}YYYYYY@{}}
+\toprule
+\textbf{Cự ly $d_0$ (m)} & \textbf{Khoảng cách $\bar{d}$ (m)} & \textbf{Chồng lấn $w_{\text{occ}}$} & \textbf{Nền lò xo $E_{\text{lò xo}}$} & \textbf{Hiệu quả đầy đủ $E$} & \textbf{Lợi ích $\Delta_c$} \\
+\midrule
+$0$ & $12{,}0$ & $0{,}582$ & $0{,}2380 \pm 0{,}0009$ & $0{,}2698 \pm 0{,}0009$ & $+0{,}0318 \pm 0{,}0008$ \\
+$20$ & $21{,}0$ & $0{,}481$ & $0{,}2342 \pm 0{,}0009$ & $0{,}2651 \pm 0{,}0009$ & $+0{,}0309 \pm 0{,}0008$ \\
+$40$ & $37{,}0$ & $0{,}346$ & $\mathbf{0{,}2294 \pm 0{,}0008}$ & $0{,}2548 \pm 0{,}0009$ & $+0{,}0254 \pm 0{,}0007$ \\
+$60$ & $57{,}0$ & $0{,}251$ & $0{,}2330 \pm 0{,}0008$ & $\mathbf{0{,}2498 \pm 0{,}0008}$ & $+0{,}0168 \pm 0{,}0006$ \\
+$80$ & $78{,}0$ & $0{,}188$ & $0{,}2402 \pm 0{,}0008$ & $\mathbf{0{,}2499 \pm 0{,}0008}$ & $+0{,}0097 \pm 0{,}0005$ \\
+$100$ & $99{,}0$ & $0{,}152$ & $0{,}2451 \pm 0{,}0008$ & $0{,}2508 \pm 0{,}0008$ & $+0{,}0057 \pm 0{,}0004$ \\
+$140$ & $140{,}0$ & $0{,}139$ & $0{,}2539 \pm 0{,}0008$ & $0{,}2544 \pm 0{,}0008$ & $+0{,}0005 \pm 0{,}0001$ \\
+$200$ & $200{,}0$ & $0{,}138$ & $\mathbf{0{,}2631 \pm 0{,}0008}$ & $\mathbf{0{,}2631 \pm 0{,}0008}$ & $+0{,}0000 \pm 0{,}0000$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\begin{ketqua}{Bản chất cơ học của Đáy trũng trung gian: Điểm đứt gãy liên lạc cục bộ}
+Lợi ích liên lạc $\Delta_c(d_0)$ giảm đơn điệu rất nhanh theo hàm suy giảm âm thanh $\exp(-d^2/2R_c^2)$: tại $d_0 = 60\text{ m}$, giá trị này chỉ còn $+0{,}0168\,e$ và triệt tiêu hoàn toàn khi $d_0 \ge 140\text{ m}$. Ngược lại, đường nền lò xo $E_{\text{lò xo}}(d_0)$ phi đơn điệu: ở cự ly $40\text{ m}$, dao động lò xo cưỡng bức hai cá thể giằng co quanh khoảng cách trung bình giữa các cây ăn quả ($40\text{ m}$), khiến chúng liên tục cản trở nhau và làm năng suất chạm đáy $0{,}2294\,e$.\par\smallskip
+
+Khi cộng hai thành phần: tại cự ly $d_0 \in [60; 100]\text{ m}$, tín hiệu âm thanh đã suy giảm mạnh nhưng hai cá thể chưa thoát khỏi trường cạnh tranh cục bộ; khoảng cách này trở thành điểm đứt gãy liên lạc, tạo nên đáy trũng của toàn hệ thống ($E \approx 0{,}2498\,e$).
+\end{ketqua}
+
+\section{Biên của Khoảng cách Tối ưu \texorpdfstring{$d^*$}{d*}}
+Trên lưới quét bước $20\text{ m}$ qua 12 biến thể cấu trúc (quét $B_c, B_s, \lambda, \kappa, K, B_g$), mô hình \textbf{bác bỏ sự tồn tại của một khoảng cách tối ưu trung gian} $d^*$ nằm ở rìa vùng nghe rõ:
+\begin{itemize}
+  \item \textbf{Chế độ Tụ hội ($d^* \approx 0\text{ m}$):} Xuất hiện khi lợi ích truyền tin áp đảo cạnh tranh ($B_c \ge 4$, môi trường khan hiếm $K=3$, hoặc cá thể tự tìm kém $B_g=0$). Tại điểm cơ sở $B_c = 4$, hai đầu mút $d_0 = 0$ ($0{,}2698\,e$) và $d_0 = 200$ ($0{,}2631\,e$) có chênh lệch rất nhỏ ($\varepsilon^*/\varepsilon_0 = 1{,}004$), cho thấy hệ nằm sát ranh giới chuyển pha. Khi $B_c = 8$, chế độ $d^* = 0$ thắng áp đảo ($+0{,}0318\,e$).
+  \item \textbf{Chế độ Phân tách Hoàn toàn ($d^* = 200\text{ m}$):} Xuất hiện khi cạnh tranh cạn kiệt áp đảo liên lạc ($B_c \le 2$, có cạnh tranh can thiệp $\lambda = 1$, hoặc bật cơ chế giữ vùng ăn $\kappa = 0{,}3$). Lúc này chiến lược tốt nhất là tắt liên lạc và đi cách xa nhau nửa vòng tròn.
+\end{itemize}
+
+\section{Đối chiếu với Nghiên cứu khảo sát của Ramos-Fernandez (2026): Điểm Cân bằng Pareto \texorpdfstring{$w^* = 1/3$}{w* = 1/3}}
+\begin{thucte}
+Trong nghiên cứu thực địa, Ramos-Fernandez và cộng sự \cite{ramos} không phát biểu câu \textit{“ở xa nhất có thể”} mà chứng minh rằng độ chồng lấn vùng hiểu biết cốt lõi tối ưu giữa $n=2$ cá thể là $w^* = 1/(n+1) = 1/3 \approx 0{,}33$.
+
+Để đối chiếu, chúng tôi chia vòng tròn thành 60 ô và đo độ chồng lấn thời gian cư trú 60\% ($w_{\text{occ}}$). Kết quả Bảng \ref{tab:decomp} chỉ ra: khi $d_0$ tăng từ $0$ lên $200\text{ m}$, $w_{\text{occ}}$ giảm đơn điệu từ $0{,}582$ về $0{,}138$ và \textbf{cắt đúng ngưỡng $w^* = 1/3$ tại $d_0 \approx 40\text{--}60\text{ m} \approx R_c$}. 
+
+Cự ly $d_0 \approx 40\text{--}50\text{ m}$ chính là \textbf{Điểm cân bằng Pareto sinh thái}: tại đây nhóm bảo tồn được $\sim 65\%$ giá trị truyền tin tối đa ($\Delta_c \approx +0{,}020\,e$), trong khi độ chồng lấn không gian giảm đi một nửa so với đi sát nhau ($0{,}346$ so với $0{,}582$), vừa đủ để tránh giẫm chân lên nhau trước khi trượt vào đáy trũng cạn kiệt ($60\text{--}100\text{ m}$).
+\end{thucte}
+
+% ==============================================================================
+% CHƯƠNG 3: KÊNH TRUYỀN TIN THỰC TẾ: NHIỄU, CHI PHÍ & LỪA DỐI
+% ==============================================================================
+\FloatBarrier
+\chapter{Kênh truyền tin thực tế: Nhiễu, Chi phí \& Lừa dối Chiến lược}
+
+\section{Nhiễu Kênh truyền Ornstein--Uhlenbeck \& Vai trò của Cổng Cảm nhận}
+Sai số vị trí thông điệp $\eta_j(t)$ được mô hình hóa bằng quá trình Ornstein--Uhlenbeck với thời gian tương quan $\tau_c = 10\text{ phút}$ và độ lệch chuẩn dừng $\sigma_c$:
+\begin{equation}
+\dd\eta_j = -\frac{\eta_j}{\tau_c}\,\dd t + \sigma_c\sqrt{\frac{2}{\tau_c}}\,\dd W_j^{(\text{msg})}, \qquad \eta_j(0) \sim \mathcal{N}(0, \sigma_c^2)
+\end{equation}
+
+\chenhinh[0.78\textwidth]{fig_gate.png}{Tác động của nhiễu kênh truyền $\sigma_c$ và vai trò bảo vệ của cổng cảm nhận $\gamma$: (Trái) Sự suy giảm giá trị thông tin theo $\sigma_c$ với ngưỡng chịu lỗi $\sigma_{1/2} = 49{,}2\text{ m}$; (Phải) Cổng cảm nhận $\gamma=1$ bảo vệ cá thể không bị âm, trong khi $\gamma=0$ làm suy giảm năng suất.}{fig:noise_gate}
+
+Kết quả thực nghiệm trên $5.000$ bản sao (Hình \ref{fig:noise_gate}) làm sáng tỏ hai cơ chế nhận thức:
+\begin{enumerate}
+  \item \textbf{Độ chịu lỗi cao ($\sigma_{1/2} = \mathbf{49{,}2\text{ m}}$, CI 95\%: $[43; 59]\text{ m}$ tại $B_c = 8$):} Giá trị liên lạc chỉ giảm một nửa khi sai số tọa độ lên tới xấp xỉ bán kính liên lạc ($R_c = 50\text{ m}$), tức gấp 5 lần độ rộng tán cây ($s = 10\text{ m}$). Đặc biệt, khi có cổng cảm nhận ($\gamma = 1$), ngay cả khi $\sigma_c = 250\text{ m}$, lợi ích ròng vẫn dương ($+0{,}0029\,e$).
+  \item \textbf{Cơ chế bộ lọc trạng thái của Cổng cảm nhận $(1-q_i)^\gamma$:} Khi cá thể $i$ đang đứng trên vùng nhiều thức ăn ($q_i \to 1$), thừa số $(1-q_i) \to 0$ tự động ngắt lực kéo từ bên ngoài. Do đó, việc nhân thêm trọng số Bayes tĩnh $w_B = \sigma_p^2/(\sigma_p^2+\sigma_c^2)$ trở nên dư thừa và làm yếu tín hiệu cứu trợ khi cá thể đang lạc ở vùng đói ($q_i \approx 0$). Ngược lại, khi tắt cổng ($\gamma = 0$), người nhận ngây thơ bị kéo khỏi vùng đang ăn bởi các tọa độ nhiễu, chịu thiệt hại âm có ý nghĩa thống kê cực cao: $\mathbf{-0{,}0056 \pm 0{,}0007\,e}$ ($8{,}0\text{ SE}$, độ dốc $-1{,}28 \times 10^{-4}\,e/\text{m}$).
+\end{enumerate}
+
+\section{Độ chi tiết thông điệp (\texorpdfstring{$b \in \{1..4\}$}{b in {1..4}}) \& Sự đánh đổi chi phí}
+Đề bài yêu cầu khảo sát các mức độ chi tiết khác nhau. Chi phí năng lượng tiêu hao cho phát tin là $C_i = c_0\,b\int_0^T q_i(t)\,\dd t$.
+
+\chenhinh[0.78\textwidth]{fig_cost.png}{Giá trị liên lạc gộp và ròng theo các bậc chi tiết thông điệp $b \in \{1..4\}$ dưới các mức chi phí phát tin $c_0$. Bậc $b=2$ tối ưu ở mức chi phí vừa phải, trong khi $b=1$ là chiến lược sống còn khi chi phí đắt đỏ.}{fig:cost_detail}
+
+\begin{ketqua}{Sự tương đương trong Cấu trúc 1D và Quy tắc Chuyển pha $b^*$}
+\begin{itemize}
+  \item \textbf{Sự tương đương tuyệt đối giữa $b=2$ và $b=3$ trong 1D:} Trong không gian một chiều, truyền góc hướng nhị phân ($b=2$, $\psi_2 = \operatorname{sgn}(\tilde{a})$) và truyền tọa độ chính xác ($b=3$, $\psi_3 = \tanh(\tilde{a}/\delta_0)$ với $\delta_0 = 2\text{ m}$) cho lượng thu hoạch thô trùng khít nhau: $\Delta E(b=3 - b=2) = \mathbf{-0{,}00004 \pm 0{,}00007\,e}$ ($p = 0{,}57$). Sai lệch tích phân chỉ là $0{,}46\%$.
+  \item \textbf{Quy tắc chọn bậc tối ưu $b^*$ theo chi phí sinh lý $c_0$:}
+  \begin{itemize}
+    \item Chi phí rẻ ($c_0 \le 0{,}002$): Bậc toàn phần $b^* = 4$ (tọa độ + chất lượng) tối ưu ($+0{,}0181\,e$).
+    \item Chi phí vừa phải ($c_0 \in [0{,}004; 0{,}008]$): Bậc chỉ hướng nhị phân $\mathbf{b^* = 2}$ tối ưu trên $7/9$ đến $9/9$ ô lưới, tiết kiệm $50\%$ năng lượng phát âm so với $b=4$.
+    \item Chi phí đắt đỏ ($c_0 \ge 0{,}016$): Tiếng hú định vị đơn giản $\mathbf{b^* = 1}$ là chiến lược sống còn duy nhất để tránh bị thâm hụt năng lượng.
+  \end{itemize}
+\end{itemize}
+\end{ketqua}
+
+\section{Lừa dối Chiến lược (\texorpdfstring{$t, \Delta$}{t, Delta}), Động lực học Niềm tin \& Chân dung Pha Replicator}
+Cá thể $A$ nói thật với xác suất $t \in [0, 1]$ và nói dối với xác suất $1-t$. Khi nói dối, tọa độ báo bị dịch chuyển một đoạn $\Delta = 60\text{ m}$.
+
+\begin{enumerate}
+  \item \textbf{Lừa dối có hướng độc hại gấp $3{,}01$ lần nhiễu ngẫu nhiên (Hình \ref{fig:deception_harm}):}
+  Khi $A$ nói dối theo hướng kéo về phía người nhận, tọa độ bị đảo dấu làm $B$ bị giam chân tại một điểm bẫy ở vùng trống, gây thiệt hại cho $B$ lên tới $\mathbf{-0{,}0447 \pm 0{,}0011\,e}$, độc hại gấp \textbf{$3{,}01\times$} so với nhiễu ngẫu nhiên cùng độ lớn ($-0{,}0148\,e$). Đây là cận trên: nếu nói dối hướng ngẫu nhiên (\texttt{rand}), tỉ số giảm còn $1{,}50\times$; nếu đẩy ra xa (\texttt{away}), thiệt hại bằng $0$ do $B$ đi qua vùng ăn thật và được cổng cảm nhận giữ lại.
+
+  \chenhinh[0.70\textwidth]{fig4_deception_harm.png}{Mức độ độc hại của các chiến lược lừa dối có hướng so với nhiễu ngẫu nhiên: Lừa dối kéo về phía người nhận gây hại gấp $3{,}01\times$ so với nhiễu ngẫu nhiên cùng cường độ.}{fig:deception_harm}
+
+  \item \textbf{Ngưỡng cạnh tranh xuất hiện lừa dối ($s^* \approx 0{,}67$, Hình \ref{fig:deception_threshold}):}
+  Khi khảo sát tỷ lệ kho dùng chung $s \in [0; 1]$, lợi ích của kẻ nói dối $\Delta E_A$ chỉ dương khi $s > 0{,}67$. Nếu không tranh giành thức ăn ($s < 0{,}5$), việc lừa $B$ làm $A$ mất đi một đồng minh tìm kiếm thức ăn, gây hại cho chính $A$ ($\Delta E_A = -0{,}0134\,e$).
+
+  \chenhinh[0.70\textwidth]{fig4_deception_threshold.png}{Ngưỡng cạnh tranh xuất hiện lừa dối: Lợi ích của kẻ nói dối $\Delta E_A$ chỉ dương khi tỷ lệ kho thức ăn dùng chung vượt $s^* \approx 0{,}67$.}{fig:deception_threshold}
+
+  \item \textbf{Tỉ lệ Hại/Lợi đa chế độ:}
+  \begin{itemize}
+    \item Cạnh tranh khai thác thuần túy ($s=1, \lambda=0, \kappa=1$): $\text{Hại } B / \text{Lợi } A = -0{,}0447 / +0{,}0084 = \mathbf{5{,}30 : 1}$ (trò chơi tổng âm).
+    \item Cạnh tranh can thiệp trực tiếp ($\lambda = 1$) hoặc giữ vùng ăn ($\kappa = 0{,}3$): Lợi ích độc chiếm tăng vọt, nén tỉ lệ Hại/Lợi xuống $\mathbf{1{,}25 : 1}$ và $\mathbf{0{,}99 : 1}$.
+  \end{itemize}
+
+  \item \textbf{Chính sách niềm tin tối ưu: Ngưỡng chuyển trạng thái nhị phân tại $t_0 \approx 0{,}38$:}
+  Đối với người nhận biết tỷ lệ nói thật $t$ của bạn, vì hàm lợi ích phụ thuộc tuyến tính vào biến điều khiển niềm tin $p$ (Hình \ref{fig:belief_policy}), chính sách tối ưu theo nguyên lý cực trị Pontryagin mang dạng nhị phân đóng--ngắt (\textit{bang-bang}): tin tuyệt đối ($p^* = 1$) nếu $t > t_0 \approx 0{,}38$, và phớt lờ hoàn toàn ($p^* = 0$) nếu $t < t_0$. Hệ thống không duy trì trạng thái nửa tin nửa ngờ ($0 < p^* < 1$) do nghiệm tối ưu luôn rơi vào hai biên cực trị.
+\end{enumerate}
+
+\chenhinh[0.72\textwidth]{fig4_belief_policy.png}{Chính sách niềm tin tối ưu của người nhận: Chuyển trạng thái nhị phân kiểu đóng--ngắt (\textit{bang-bang}) tại ngưỡng trung thực $t_0 \approx 0{,}38$.}{fig:belief_policy}
+
+\subsection{Hệ Tiến hóa Replicator và Chân dung Pha Hai Trạng thái Cân bằng}
+Để khảo sát động lực học tiến hóa dài hạn của tính trung thực và niềm tin trong quần thể, chúng tôi thiết lập hệ phương trình nhân bản (\textit{replicator dynamics}) theo mô hình Rowell--Ellner--Reeve \cite{rowell}. Quần thể bao gồm hai tỷ lệ tiến hóa đồng thời: tỷ lệ cá thể phát tín hiệu trung thực $t \in [0, 1]$ và tỷ lệ cá thể nhận tin đặt niềm tin $y \in [0, 1]$:
+\begin{equation}
+  \frac{\dd t}{\dd\tau} = t(1 - t)\big(c_l L - y\alpha\big), \qquad \frac{\dd y}{\dd\tau} = y(1 - y)\big(t\beta_T + (1 - t)\beta_L\big)
+\end{equation}
+trong đó $L$ là tần suất gặp gỡ, $\alpha$ là lợi thế khai thác khi nói dối thành công, $\beta_T > 0$ là lợi ích khi tin vào thông tin thật, và $\beta_L < 0$ là tổn thất khi tin vào thông tin giả.
+
+\chenhinh[0.72\textwidth]{f5.png}{Chân dung pha (\textit{phase portrait}) của hệ phương trình nhân bản Replicator Dynamics: Trường vector chỉ rõ hai bồn hút cân bằng ổn định (trạng thái hợp tác toàn diện $(t=1, y=1)$ và trạng thái sụp đổ giao tiếp $(t=0, y=0)$), phân tách bởi đường phân cách (\textit{separatrix}) phụ thuộc vào chi phí nói dối $c_l$.}{fig:replicator_phase}
+
+Hình \ref{fig:replicator_phase} thể hiện chân dung pha của hệ thống:
+\begin{itemize}
+  \item \textbf{Hai điểm hút cân bằng ổn định (Bistable Attractors):} Hệ thống sở hữu hai điểm dừng tiệm cận ổn định: điểm hợp tác trung thực $(1, 1)$ và điểm nghi ngờ toàn diện $(0, 0)$. Điểm yên ngựa nằm ở phần trong không gian pha, xác lập ranh giới phân định (\textit{separatrix}) giữa vùng hội tụ về trung thực và vùng sụp đổ giao tiếp.
+  \item \textbf{Cận dưới chi phí trừng phạt nói dối $c_l^*$:} Để mở rộng điểm hút của trạng thái trung thực $(1, 1)$ và ngăn chặn hoàn toàn chiến lược nói dối, chi phí sinh lý hoặc trừng phạt xã hội đối với hành vi phát tin giả phải vượt qua ngưỡng tới hạn:
+  \begin{equation}
+    c_l^* = \frac{\alpha}{L} = \mathbf{0{,}0093} \approx \mathbf{2{,}3\,c_0}
+  \end{equation}
+  ở chế độ cạnh tranh khai thác cơ sở; con số này tăng lên $9{,}0\text{--}16{,}7\,c_0$ khi môi trường có cạnh tranh can thiệp trực tiếp ($\lambda = 1$) hoặc cơ chế bám giữ vùng ăn ($\kappa = 0{,}3$).
+\end{itemize}
+
+% ==============================================================================
+% CHƯƠNG 4: ĐỘ NHẠY TOÀN CỤC & MA TRẬN TƯƠNG TÁC PHI TUYẾN
+% ==============================================================================
+\FloatBarrier
+\chapter{Độ nhạy toàn cục \& Mối quan hệ tương tác giữa các yếu tố}
+
+\section{Xếp hạng mức độ ảnh hưởng của các yếu tố (Tornado Plot)}
+Để trả lời câu hỏi cốt lõi của đề bài: \textit{“Yếu tố nào quan trọng hơn?”}, toàn bộ các tham số được khảo sát trên cùng thước đo biến thiên của giá trị giao tiếp thuần $V = M - M^{b=0}$ trên dải sinh thái thực tế \cite{saltelli} (Hình \ref{fig:tornado}).
+
+\chenhinh[0.82\textwidth]{fig5_tornado.png}{Xếp hạng độ nhạy toàn cục của các yếu tố giao tiếp trên giá trị liên lạc thuần $V$: Khoảng cách ưa thích $d_0$ đứng vị trí thứ nhất ($\Delta V = 0{,}0467\,e$), áp đảo sai số kênh truyền $\sigma_c$ gấp $4{,}83$ lần.}{fig:tornado}
+
+\begin{ketqua}{Xếp hạng mức độ ảnh hưởng của các yếu tố}
+\begin{enumerate}
+  \item \textbf{Khoảng cách ưa thích $d_0$ dẫn đầu:} $\Delta V_{d_0} = \mathbf{0{,}0467\,e}$.
+  \item \textbf{Cổng cảm nhận của người nhận $\gamma$:} $\Delta V_\gamma = 0{,}0300\,e$.
+  \item \textbf{Bán kính liên lạc âm thanh $R_c$:} $\Delta V_{R_c} = 0{,}0190\,e$.
+  \item \textbf{Mức độ trung thực $t$ (Lừa dối):} $\Delta V_t = 0{,}0180\,e$ (cho cả cặp; nhưng gây thiệt hại tới $0{,}0710\,e$ cho nạn nhân).
+  \item \textbf{Cường độ bám tín hiệu $B_c$:} $\Delta V_{B_c} = 0{,}0170\,e$.
+  \item \textbf{Độ lệch chuẩn nhiễu kênh truyền $\sigma_c$:} $\Delta V_{\sigma_c} = \mathbf{0{,}0097\,e}$.
+  \item \textbf{Bậc chi tiết thông điệp $b$:} $\Delta V_b = 0{,}0047\,e$.
+\end{enumerate}
+Kết quả khẳng định: \textbf{Khoảng cách không gian $d_0$ quan trọng gấp $4{,}83$ lần sai số kênh truyền $\sigma_c$, và gấp gần $10$ lần bậc chi tiết thông điệp $b$}.
+\end{ketqua}
+
+\section{Ma trận tương tác giữa các cặp yếu tố}
+Hệ số tương tác giữa hai yếu tố $a$ và $b$ được đo bằng sai phân kép trên các bản sao CRN:
+\begin{equation}
+I_{ab} = \Delta V_{ab} - \Delta V_a - \Delta V_b
+\end{equation}
+
+\chenhinh[0.82\textwidth]{fig5_interaction.png}{Ma trận tương tác 12 cặp $I_{ab}$ trên $5.000$ bản sao siêu mô phỏng, thể hiện hai quy luật: tương tác dương bão hòa ($I > 0$) và tương tác âm gây hại thêm ($I < 0$).}{fig:interaction_matrix}
+
+\begin{table}[htbp]
+\centering
+\footnotesize
+\caption{Ma trận tương tác $2 \times 2$ của các cặp yếu tố then chốt trên $5.000$ bản sao siêu mô phỏng.}\label{tab:interaction}
+\begin{tabularx}{\textwidth}{@{}p{0.30\textwidth}cccc>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Cặp yếu tố chuyển xấu $(a, b)$} & $\Delta V_a$ & $\Delta V_b$ & $\Delta V_{ab}$ & \textbf{Hệ số $I_{ab}$ ($z$-score)} & \textbf{Ý nghĩa cơ học / Sinh thái} \\
+\midrule
+Khoảng cách xa \& Lừa dối ($d_0=100, t=0$) & $-0{,}0225$ & $-0{,}0179$ & $-0{,}0213$ & $\mathbf{+0{,}0148 \pm 0{,}0009}$ ($+15{,}7\text{ SE}$) & Bão hòa: ở xa âm thanh tắt làm dối vô hại \\
+Khoảng cách xa \& Nhiễu ($d_0=100, \sigma_c=60$) & $-0{,}0225$ & $-0{,}0042$ & $-0{,}0223$ & $\mathbf{+0{,}0045 \pm 0{,}0008}$ ($+5{,}9\text{ SE}$) & Ở xa không nghe rõ nên nhiễu không gây thêm hại \\
+Nhiễu \& Lừa dối ($\sigma_c=60, t=0$) & $-0{,}0042$ & $-0{,}0179$ & $-0{,}0102$ & $\mathbf{+0{,}0119 \pm 0{,}0012}$ ($+9{,}7\text{ SE}$) & Hai tác hại cùng bào mòn một quỹ lợi ích chung \\
+Cổng yếu \& Lừa dối ($\gamma=0{,}5, t=0$) & $+0{,}0064$ & $-0{,}0179$ & $-0{,}0310$ & $\mathbf{-0{,}0210 \pm 0{,}0007}$ ($-28{,}1\text{ SE}$) & Mất cổng giác quan làm phơi nhiễm trước dối trá \\
+Cổng yếu \& Nhiễu ($\gamma=0{,}5, \sigma_c=60$) & $+0{,}0064$ & $-0{,}0042$ & $-0{,}0022$ & $\mathbf{-0{,}0044 \pm 0{,}0006}$ ($-6{,}9\text{ SE}$) & Mất cổng làm tăng nhẹ tác hại của tọa độ nhiễu \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+Bảng \ref{tab:interaction} và Hình \ref{fig:interaction_matrix} làm sáng tỏ hai quy luật tương tác cơ học:
+\begin{itemize}
+  \item \textbf{Tương tác dương bão hòa ($I > 0$) -- Cơ chế ngắt mạch vĩ mô:} Khoảng cách vật lý xa ($d_0 \ge 100\text{ m}$) cắt đứt đường truyền âm thanh ($\rho(d) \to 0$); khi kênh truyền đã mất hiệu lực, hành vi lừa dối ($t=0$) hay nhiễu tọa độ ($\sigma_c=60\text{ m}$) không gây thêm tổn thất, tạo ra lớp vỏ chắn bảo vệ tự nhiên từ môi trường không gian.
+  \item \textbf{Tương tác âm cộng hưởng phá hủy ($I < 0$) -- Khi van an toàn vi mô bị vô hiệu hóa:} Cổng cảm nhận tại chỗ $(1-q_i)^\gamma$ là chốt chặn phòng vệ tối hậu; khi cổng bị suy yếu ($\gamma \to 0{,}5$), tác hại của tin giả ($t=0$) không dừng lại ở mức cộng dồn mà bùng nổ cộng hưởng ($I = -0{,}0210 \pm 0{,}0007\,e$, $z = -28{,}1\text{ SE}$), đẩy tổn thất vượt xa tổng hai tác nhân độc lập.
+\end{itemize}
+
+\FloatBarrier
+\subsection{Bề mặt tương tác 3D giữa khoảng cách và nhiễu kênh truyền}
+Hình \ref{fig:relation_3d} thể hiện bề mặt 3D của lợi ích liên lạc thuần $\Delta_c(d_0, \sigma_c)$ trên toàn bộ miền khảo sát:
+
+\chenhinh[0.76\textwidth]{fig_relation.png}{Bề mặt tương tác 3D giữa khoảng cách ưa thích $d_0$ và độ lệch chuẩn nhiễu kênh truyền $\sigma_c$ đối với giá trị liên lạc thuần $\Delta_c$: Khi $d_0 < 60\text{ m}$, nhiễu $\sigma_c$ làm suy giảm dần lợi ích; khi $d_0 \ge 100\text{ m}$, mặt cong dẹt phẳng về $0$, thể hiện hiệu ứng bão hòa do suy giảm âm thanh theo khoảng cách.}{fig:relation_3d}
+
+Đồ thị 3D thể hiện rõ hai đặc trưng:
+\begin{enumerate}
+  \item Khi ở cự ly gần ($d_0 \le 40\text{ m}$), mặt phản ứng có độ dốc thoai thoải theo trục $\sigma_c$, giá trị liên lạc giảm từ từ từ $+0{,}0318\,e$ về $+0{,}0150\,e$.
+  \item Khi ở cự ly xa ($d_0 \ge 100\text{ m}$), mặt cong nằm phẳng trên mặt $z = 0$, bất kể mức nhiễu $\sigma_c$ là bao nhiêu. Điều này chứng minh khoảng cách hoạt động như một công tắc ngắt tự nhiên đối với kênh truyền.
+\end{enumerate}
+
+% ==============================================================================
+% CHƯƠNG 5: THU GỌN MÔ HÌNH (TOST), GIỚI HẠN & KHUYẾN NGHỊ
+% ==============================================================================
+\FloatBarrier
+\chapter{Mô hình Rút gọn (TOST), Giới hạn \& Khuyến nghị Thực tế}
+
+\section{Kiểm định tương đương TOST cho mô hình rút gọn}
+Để phục vụ mô phỏng quần thể đông cá thể ($N \gg 2$), chúng tôi kiểm định tính tương đương giữa mô hình đầy đủ và mô hình rút gọn Surrogate (lược bỏ bậc $b=3$ về $b=2$, loại bỏ trọng số Bayes tĩnh $w_B$, và rút gọn kênh truyền qua hệ số $\alpha_{\text{eff}}$):
+\begin{equation}
+v_i^{\text{comm, surr}} = \alpha_{\text{eff}}\,B_c\,\exp\left(-\frac{d^2}{2R_c^2}\right) q_j\,(1 - q_i)^\gamma \operatorname{sgn}\big(\delta(\hat{c}_j - x_i)\big)
+\end{equation}
+
+Áp dụng quy trình kiểm định tương đương sinh học hai phía TOST (\textit{Two One-Sided Tests} \cite{tost}) trên sai khác cặp $D = E_{\text{surrogate}} - E_{\text{full}}$ với $R = 5.000$ bản sao, đặt biên dung sai khắt khe $\Delta_{\text{eq}} = \pm 0{,}0020\,e$:
+\begin{align}
+\bar{D} &= -0{,}000036 \pm 0{,}000050\,e \\
+95\%\text{ CI} &= \big[ -0{,}000134;\, +0{,}000063 \big] \subset \big[ -0{,}0020;\, +0{,}0020 \big]
+\end{align}
+
+\begin{ketqua}{Nghiệm thu TOST: Đạt chuẩn tương đương}
+Khoảng tin cậy $95\%$ nằm trọn vẹn bên trong biên tương đương với $p < 10^{-15}$. Mô hình rút gọn Surrogate đạt chuẩn tương đương thống kê, giúp tăng tốc độ tính toán gấp $40\times$ mà không làm sai lệch kết quả động lực học.
+\end{ketqua}
+
+\chenhinh[0.82\textwidth]{fig5_tost.png}{Phân phối sai khác cặp $D = E_{\text{surrogate}} - E_{\text{full}}$ và kiểm định tương đương hai phía TOST trên $5.000$ bản sao: Khoảng tin cậy $95\%$ nằm trọn trong biên dung sai $\pm 0{,}0020\,e$ ($p < 10^{-15}$).}{fig:tost}
+
+\chenhinh[0.82\textwidth]{fig2_robust.png}{Kiểm chứng độ bền vững của khoảng cách tối ưu $d^*$ trên 12 biến thể tham số sinh thái và vận động (lưới quét bước $20\text{ m}$): Tất cả các biến thể đều hội tụ về hai chế độ biên ($0\text{ m}$ hoặc $200\text{ m}$), bác bỏ cực đại trung gian.}{fig:robustness_12}
+
+\section{Bảng tổng hợp độ bền vững của các kết luận chính}
+Bảng \ref{tab:conclusion_robustness} phân định rõ ranh giới giữa những kết luận đã được kiểm chứng bền vững và những kết luận phụ thuộc vào giả định biên:
+
+\begin{table}[htbp]
+\centering
+\small
+\caption{Bảng phân loại mức độ bền vững của các kết luận cốt lõi.}\label{tab:conclusion_robustness}
+\begin{tabularx}{\textwidth}{@{}lp{0.32\textwidth}p{0.25\textwidth}X@{}}
+\toprule
+\textbf{\#} & \textbf{Kết luận} & \textbf{Mức độ bền vững} & \textbf{Căn cứ \& Điều kiện biên} \\
+\midrule
+1 & Môi trường ($s, K, B_g, \kappa$) chi phối $M$; $\Phi < 1$ & \textbf{Bền vững} & Đúng trên mọi ô lưới; mất $8{,}7\%$ do cạn kiệt kho chung hữu hạn \\
+2 & Khoảng cách $d_0$ áp đảo sai số $\sigma_c$ gấp $\sim 5$ lần & \textbf{Bền trên dải sinh học} & Tornado $\Delta V = 0{,}0467$ vs $0{,}0097$; Sobol $S_{T, d_0} = 0{,}49$ \\
+3 & Khoảng cách ngắt kênh truyền theo ngưỡng & \textbf{Bền về cấu trúc} & Khi $d_0 \ge 100\text{ m}$, $I(d_0, t) = +0{,}0148\,e$ ($+15{,}7\text{ SE}$) \\
+4 & Lừa dối kéo về hại gấp $3{,}01\times$ nhiễu & \textbf{Cận trên theo hướng} & $3{,}01\times$ khi \texttt{toward}, $1{,}50\times$ khi \texttt{rand}, $0\times$ khi \texttt{away} \\
+5 & Ngưỡng xuất hiện lừa dối $s^* \approx 0{,}67$ & \textbf{Bền vững theo cạnh tranh} & Chỉ khi kho chung $s > 0{,}67$ kẻ dối trá mới có lợi \\
+6 & Không có cực đại trung gian của $E(d_0)$ trong 1D & \textbf{Bền trên 12 biến thể} & Lưới $20\text{ m}$; cực đại rơi vào $0\text{ m}$ hoặc $200\text{ m}$ \\
+7 & Điểm giao thoa sinh thái $w^* = 1/3$ tại $40\text{--}60\text{ m}$ & \textbf{Khớp định tính thực địa} & Cân bằng Pareto giữa giá trị $V$ và giảm trùng lấn \\
+8 & Bậc $b=2 \equiv b=3$ trong 1D & \textbf{Phụ thuộc giả định 1D} & Lên 2D, góc liên tục sẽ tách biệt $b=3$ khỏi $b=2$ \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\section{Các giới hạn của mô hình}
+\begin{phanbien}[Các giới hạn của mô hình]
+Để đảm bảo tính khách quan khoa học, bốn giới hạn sau đây cần được nhìn nhận rõ:
+\begin{enumerate}
+  \item \textbf{Không gian vòng một chiều (1D Ring):} Không gian 1D làm suy biến góc phương vị thành dấu nhị phân ($\pm 1$), dẫn đến sự tương đương $b=2 \equiv b=3$, đồng thời làm tăng xác suất va chạm bắt gặp tình cờ lên tới $\sim 71\%$. Trên mặt phẳng 2D, tỷ lệ bao phủ giảm mạnh, làm tăng giá trị của việc truyền tọa độ 2D.
+  \item \textbf{Mô hình nhận thức chưa có bộ lọc hạt Bayes không gian và trí nhớ dài hạn:} Người nhận trong mô hình chỉ cập nhật một biến niềm tin $p_i(t)$, chưa duy trì phân phối hậu nghiệm đầy đủ trên lưới tọa độ và lịch sử tương tác nhiều ngày \cite{falcon}.
+  \item \textbf{Mốc đo độ nhạy $V$:} Giá trị giao tiếp thuần $V$ ở Chương 4 được đo trên nền có lò xo xã hội ($B_s = 0{,}2, d_0 = 50\text{ m}$); nếu đo trên nền tự do không lò xo, các biên độ sẽ dịch chuyển tịnh tiến.
+  \item \textbf{Thực tế hành vi khỉ nhện ngoài tự nhiên:} Dù hiện tượng lừa dối chiến thuật đã được ghi nhận ở một số loài linh trưởng \cite{wheeler}, loài khỉ nhện \textit{Ateles geoffroyi} ngoài tự nhiên chủ yếu biểu hiện hành vi hợp tác trung thực. Phần mô hình hóa lừa dối đóng vai trò như một phép thử tiến hóa theo câu hỏi giả định của đề bài.
+\end{enumerate}
+\end{phanbien}
+
+\section{Một số đề xuất cho nghiên cứu thực địa}
+Nhằm trả lời yêu cầu của đề bài (\textit{“what should be considered when trying to understand cooperative foraging”}), chúng tôi đề xuất 5 điểm cho các nghiên cứu thực địa:
+\begin{enumerate}
+  \item \textbf{Phân biệt chi phí dùng chung tài nguyên với giá trị thông tin:} Khi thấy nhóm kiếm ăn có năng suất trên mỗi cá thể thấp hơn cá thể đơn độc ($\Phi < 1$), không nên vội kết luận là giao tiếp không có ích; cần tính đến phần tổn thất do cạnh tranh cạn kiệt nguồn thức ăn chung $\Phi_0$.
+  \item \textbf{Đo khoảng cách theo tỷ số $d/R_c$:} Khoảng cách không gian ảnh hưởng đến năng suất mạnh gấp gần 5 lần so với chất lượng thông tin. Cần xác định cự ly bầy đàn dựa trên tầm nghe rõ âm thanh thực tế.
+  \item \textbf{Quan sát phản xạ của cá thể khi nhận tin:} Khả năng tự ngắt phản xạ bám theo bầy khi bản thân đang ở vùng nhiều thức ăn (cổng cảm nhận $\gamma$) là yếu tố quan trọng giúp cá thể không bị ảnh hưởng bởi tín hiệu nhiễu hoặc tin giả.
+  \item \textbf{Xem xét động cơ lừa dối qua mức độ cạnh tranh tài nguyên:} Lừa dối chỉ xuất hiện khi tỷ lệ tranh giành kho thức ăn chung vượt ngưỡng ($s > 0{,}67$). Khi thức ăn dồi dào, hợp tác trung thực là trạng thái bền vững.
+  \item \textbf{Hiểu đúng nghịch lý cự ly bầy đàn:} Cự ly thực địa $d_0 \approx R_c$ không nhằm tối đa hóa lượng thức ăn ngắn hạn trong một ngày (vốn rơi vào đáy trũng 1D), mà nhằm xác lập điểm cân bằng Pareto $w^* = 1/3$: vừa duy trì chia sẻ thông tin, vừa tránh rủi ro phân tán lạc đàn trong không gian thực.
+\end{enumerate}
+
+% ==============================================================================
+% TÀI LIỆU THAM KHẢO
+% ==============================================================================
+\begin{thebibliography}{99}
+\bibitem{ramos} Ramos-Fernandez, G., Walker, R. S., Silk, M. J., Boyer, D., \& Smith-Aguilar, S. E. (2026). Uncovering complementary information sharing in spider monkey collective foraging using higher-order spatial networks. \textit{npj Complexity}, 3(1), 1--12. https://doi.org/10.1038/s44260-025-00060-0.
+
+\bibitem{charnov} Charnov, E. L. (1976). Optimal foraging, the marginal value theorem. \textit{Theoretical Population Biology}, 9(2), 129--136.
+
+\bibitem{rowell} Rowell, J. T., Ellner, S. P., \& Reeve, H. K. (2006). Why animals lie: How dishonesty and belief can coexist in a signaling system. \textit{The American Naturalist}, 168(6), E180--E204.
+
+\bibitem{martinez} Martínez-García, R., Calabrese, J. M., Mueller, T., Olson, K. A., \& López, C. (2013). Optimizing the search for resources by sharing information: Mongolian gazelles as a case study. \textit{Physical Review Letters}, 110(24), 248106.
+
+\bibitem{saltelli} Saltelli, A., Annoni, P., Azzini, I., Campolongo, F., Ratto, M., \& Tarantola, S. (2010). Variance based sensitivity analysis of model output. Design and estimator for the total sensitivity index. \textit{Computer Physics Communications}, 181(2), 259--270.
+
+\bibitem{tost} Schuirmann, D. J. (1987). A comparison of the two one-sided tests procedure and the power approach for assessing the equivalence of average bioavailability. \textit{Journal of Pharmacokinetics and Biopharmaceutics}, 15(6), 657--680.
+
+\bibitem{falcon} Falcón-Cortés, A., Boyer, D., Aldana, M., \& Ramos-Fernández, G. (2023). Lévy movements and a slowly decaying memory allow efficient collective foraging in groups with variable sizes. \textit{PLoS Computational Biology}, 19(10), e1011528.
+
+\bibitem{wheeler} Wheeler, B. C., \& Hammerschmidt, K. (2013). Proximate factors underpinning receiver responses to deceptive false alarm calls in wild tufted capuchin monkeys: Is it counterdeception? \textit{American Journal of Primatology}, 75(7), 715--725.
+\end{thebibliography}
+
+% ==============================================================================
+% PHỤ LỤC KỸ THUẬT
+% ==============================================================================
+\appendix
+\FloatBarrier
+\chapter{Bảng Kiểm thử Tất định \& Nghiệm thu Siêu mô phỏng}
+
+\section{Bảng Nghiệm thu Số liệu Siêu mô phỏng \texorpdfstring{$R = 5.000$}{R = 5000} Bản sao}
+Bảng \ref{tab:super_audit} tổng hợp đối chiếu toàn bộ các mốc tham số và biến thiên đo đạc được trên $5.000$ bản sao CRN so với các bản thảo ban đầu, xác lập tính hội tụ tuyệt đối của nghiên cứu.
+
+\begin{table}[!htbp]
+\centering
+\footnotesize
+\renewcommand{\arraystretch}{1.06}
+\caption{Bảng đối chiếu và nghiệm thu thống kê siêu mô phỏng $R = 5.000$ bản sao.}\label{tab:super_audit}
+\begin{tabularx}{\textwidth}{@{}p{0.28\textwidth}p{0.20\textwidth}p{0.22\textwidth}>{\raggedright\arraybackslash}X@{}}
+\toprule
+\textbf{Đại lượng / Tham số} & \textbf{Số sơ bộ ($R=1000$)} & \textbf{Thực nghiệm ($R=5000$)} & \textbf{Đánh giá nghiệm thu} \\
+\midrule
+$E_1$ (Đơn độc $\kappa=1$) & $0{,}2931 \pm 0{,}0021$ & $\mathbf{0{,}2954 \pm 0{,}0009}$ & Hội tụ chuẩn; SE giảm $57\%$ \\
+$E_0$ (Chung kho, tắt liên lạc) & $0{,}2660 \pm 0{,}0019$ & $\mathbf{0{,}2696 \pm 0{,}0009}$ & Tổn thất chia sẻ kho chuẩn $8{,}7\%$ \\
+Tỉ số suy giảm $\Phi_0 = E_0/E_1$ & $0{,}908$ & $\mathbf{0{,}9126}$ & Cạn kiệt kho làm mất $8{,}7\%$ năng lượng \\
+Ngưỡng chịu nhiễu $\sigma_{1/2}$ & $51\text{ m}$ ($[43; 59]$) & $\mathbf{49{,}2\text{ m}}$ & Nằm chính giữa khoảng tin cậy $95\%$ \\
+Chênh lệch cặp $b=3 - b=2$ & $0{,}0000 \pm 0{,}0002$ & $\mathbf{-0{,}00004 \pm 0{,}00007}$ & Hoàn toàn bằng $0$ ($p=0{,}57$, TOST pass) \\
+Thiệt hại Dối $B$ ($\Delta=60, t=0$) & $-0{,}0453 \pm 0{,}0011$ & $\mathbf{-0{,}0447 \pm 0{,}0011}$ & Cận trên độc hại khi dối kéo về \\
+Thiệt hại Nhiễu $B$ ($\sigma_c=60$) & $-0{,}0149 \pm 0{,}0008$ & $\mathbf{-0{,}0148 \pm 0{,}0008}$ & Khớp số liệu tổn thất đường truyền \\
+Tỉ số Hại Dối / Hại Nhiễu & $3{,}0\times$ & $\mathbf{3{,}01\times}$ (cận trên) & Lừa dối có hướng độc hại gấp $3\times$ \\
+Tỉ lệ Hại $B$ / Lợi $A$ ($s=1$) & $\approx 7:1$ & $\mathbf{5{,}30 : 1}$ & Trò chơi tổng âm nặng nề \\
+Tỉ lệ Hại $B$ / Lợi $A$ ($\lambda=1$) & $\approx 1{,}2\text{--}1{,}3:1$ & $\mathbf{1{,}25 : 1}$ & Co hẹp khi có cản trở trực tiếp \\
+Tỉ lệ Hại $B$ / Lợi $A$ ($\kappa=0{,}3$) & $\approx 1{,}0:1$ & $\mathbf{0{,}99 : 1}$ & Co hẹp khi có bảo vệ vùng ăn MVT \\
+Biên độ khoảng cách $\Delta V_{d_0}$ & $\approx 0{,}047$ & $\mathbf{0{,}0467}$ & Khoảng cách chi phối vị trí số 1 \\
+Biên độ nhiễu kênh $\Delta V_{\sigma_c}$ & $\approx 0{,}009$ & $\mathbf{0{,}0097}$ & Nhiễu kênh truyền xếp thứ 6 \\
+Tỉ số $\Delta V_{d_0} / \Delta V_{\sigma_c}$ & $\approx 5{,}0\times$ & $\mathbf{4{,}83\times}$ & Khoảng cách quan trọng gấp gần $5$ lần \\
+Sai khác Surrogate TOST $\bar{D}$ & Chưa chạy & $\mathbf{-0{,}000036 \pm 0{,}000050}$ & Nằm trọn trong $\pm 0{,}0020\,e$ ($p < 10^{-15}$) \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\end{document}

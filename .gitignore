@@ -1,0 +1,50 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pkl
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.toc
+*.nav
+*.snm
+*.vrb
+*.synctex.gz
+*.bbl
+*.blg
+
+# Local / temporary workspace folders
+scratch/
+Mã nguồn/
+tex gốc/
+Thuyet_trinh_PPT/
+
+# Working slides & presentation drafts
+SCUDEM_Golden*
+SCUDEM_Master*
+SCUDEM_Slide*
+SCUDEM_Final_Report_EN.*
+SCUDEM_gd*
+SCUDEM_mo_hinh*
+SCUDEM_Phan_chia*
+SCUDEM_dac_ta_va_danh_gia_toan_dien.pdf
+SCUDEM_final_H.pdf
+SCUDEM_final_H_revised.pdf
+SCUDEM_XI_2026_Problems.pdf
+presentation_script.*
+script_*
+Bao_cao_Su_dung_AI_SCUDEM.md
+kich_ban_*
+Kich_ban_*
+Mo_ta_*
+slide_*
+Report_on_Use_of_AI_Tools.*
+
+# OS / Editor files
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
